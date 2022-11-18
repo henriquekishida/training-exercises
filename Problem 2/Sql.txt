@@ -1,0 +1,36 @@
+Criar tabelas:
+
+CREATE TABLE "customers" (
+	"id"	INTEGER,
+	"name"	TEXT,
+	"street"	TEXT,
+	"city"	TEXT,
+	"state"	TEXT,
+	"credit_limit"	NUMERIC,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+
+CREATE TABLE "legal_person" (
+	"id_customers"	NUMERIC,
+	"cnpj"	TEXT,
+	"contact"	TEXT,
+	FOREIGN KEY("id_customers") REFERENCES "customers"("id")
+);
+
+a. Selecionar clientes com limite de crédito acima de 1500 : 
+
+SELECT name FROM customers
+WHERE credit_limit > 1500
+
+b. Selecionar nome de cliente que é legal_person:
+
+SELECT name FROM customers
+INNER JOIN legal_person
+ON customers.id = legal_person.id_customers
+
+ou
+
+SELECT name FROM customers, legal_person
+WHERE customers.id = legal_person.id_customers
+
+

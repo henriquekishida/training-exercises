@@ -1,0 +1,129 @@
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Scanner;
+import java.util.Map;
+import java.util.HashMap;
+
+public class Main {
+    public static void main(String[] args) {
+        try {
+            System.out.println("order1.txt:");
+            readOrderFile("./order1.txt");
+            System.out.println("");
+            System.out.println("order2.txt:");
+            readOrderFile("./order2.txt");
+        } catch (IOException e) {
+            System.out.println("Error reading the file" + e);
+        } 
+    };
+
+    private static boolean isNumeric(String str){
+        return str != null && str.matches("[0-9]+");
+    };
+
+    private static Map<String, Integer> updateDishAmounts(String file_line,  Map<String, Integer> dish_map){
+        String[] spliting_result = file_line.split("\\s+");
+        //System.out.println("Dish name is " + spliting_result[0]);
+        String dish_name = spliting_result[0].replaceAll("\\s", "");
+        Integer amount_dishes = dish_map.get(dish_name);
+        
+        if (amount_dishes ==  null){
+            dish_map.put(dish_name, 1);
+        } else {
+            dish_map.put(dish_name, amount_dishes+1);
+        }
+        return dish_map;
+    };
+
+    private static Map<String, Integer> updateDishPriceByType(String file_line,  Map<String, Integer> dish_map){
+        String[] spliting_result = file_line.split("\\s+");
+        //System.out.println("Dish name is " + spliting_result[0]);
+        String dish_name = spliting_result[0].replaceAll("\\s", "");
+        Integer amount_dishes = dish_map.get(dish_name);
+        
+        if (amount_dishes ==  null){
+            dish_map.put(dish_name, Integer.valueOf(spliting_result[1]));
+        } else {
+            dish_map.put(dish_name, amount_dishes+Integer.valueOf(spliting_result[1]));
+        }
+        return dish_map;
+    };
+
+    private static double readDishPrice(String file_line){
+        //System.out.println("Contains 'Dish' is " + file_line.contains("Dish"));
+
+        String[] spliting_result = file_line.split("\\s+");
+        //System.out.println("Dish value:" + spliting_result[1]);
+
+        return Double.valueOf(spliting_result[1]);
+    };
+
+    public enum ReadingState {
+        WAITING_NUM_DISHES, WAITING_NUM_PEOPLE, READING_DISHES;
+    };
+
+    public static void readOrderFile(String file_path) throws IOException {
+        /* 
+        """
+            Method that reads the file
+        """ 
+        */
+        Path path = Paths.get(file_path); // builds the path with the argument and its extension
+        byte[] buffer = java.nio.file.Files.readAllBytes(path); // stores the file byte data to the buffer
+        String s = new String(buffer, StandardCharsets.UTF_8); // converts the bytes read to string
+        //System.out.println(s); // prints the whole file content
+        Scanner scanner = new Scanner(s); // creates scanner obj to process the file
+        ReadingState state = ReadingState.WAITING_NUM_DISHES;
+        int numDishes = 0, numPeople = 0, readedDishes = 0;
+        double totalPrice = 0.0;
+        Map<String, Integer> dishes_amounts = new HashMap<>();
+        Map<String, Integer> dishes_prices_by_type = new HashMap<>();
+        while (scanner.hasNextLine()) { // reads file line while it doesn't reach EOF
+            String line = scanner.nextLine(); //reads the file line by line
+            if (line == "") {
+                state = ReadingState.WAITING_NUM_DISHES;
+                System.out.println("Empty first line read.");
+                continue;
+            }
+            switch(state){
+                case WAITING_NUM_DISHES:
+                    if (isNumeric(line)) {
+                        numDishes = Integer.valueOf(line);
+                        System.out.println("The order number of dishes is " + numDishes);
+                        state = ReadingState.WAITING_NUM_PEOPLE;
+                    }
+                    break;
+                case WAITING_NUM_PEOPLE:
+                    if (isNumeric(line)) {
+                        numPeople = Integer.valueOf(line);
+                        System.out.println("The number of people is " + numPeople);
+                        state = ReadingState.READING_DISHES;
+                    }
+                    break;
+                case READING_DISHES:
+                    readedDishes += 1;
+                    totalPrice += readDishPrice(line);
+                    dishes_amounts = updateDishAmounts(line, dishes_amounts);
+                    dishes_prices_by_type = updateDishPriceByType(line, dishes_prices_by_type);
+                    break;
+            }
+        }
+        scanner.close();
+        //System.out.println("The total price is " + totalPrice);
+        //System.out.println("The dishes read from this file are " + dishes_amounts.keySet() + dishes_amounts.values());
+        //System.out.println("The dishes price read from this file are " + dishes_prices_by_type.keySet() + dishes_prices_by_type.values());
+        for(String dish: dishes_amounts.keySet()){
+            System.out.println(dish + " " + dishes_amounts.get(dish) + "X " + dishes_prices_by_type.get(dish));
+        };
+        System.out.println("=====================");
+        System.out.println("Total $"+totalPrice);
+        System.out.println("Total per person $"+(totalPrice/numPeople));
+        // if (readedDishes == numDishes) {
+        //     System.out.println("File seems to have the right data in it.");
+        // } else {
+        //     System.out.println("File seems to have the right data in it.");
+        // };
+    };
+}
